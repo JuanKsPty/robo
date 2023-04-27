@@ -1,9 +1,3 @@
-
-#include <Wire.h>
-#include <VL53L0X.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
-#include <utility/imumaths.h>
 #include <AFMotor.h>
 
 AF_DCMotor motorA(4)
@@ -42,7 +36,7 @@ void setup() {
 		//while (1);
 		beep(1000);
 	}
-
+	pinMode(A0,OUTPUT);
 }
 
 void turnGreen(bool left) {
@@ -258,14 +252,32 @@ void beep(int duration) {
 }
 
 void drive(int left, int right, int duration) {
-
+	directionLeft = RELEASE;
+	directionRight = RELEASE;
 	if(duration < 0) {
 		int h = left;
 		left = right;
 		right = h;
 		duration *= -1;
 	}
-
+	if (left > 0) {
+		directionLeft = FORWARD;
+	}
+	else if (left == 0) {
+		directionLeft = RELEASE;
+	}
+	else{
+		directionLeft = BACKWARD;
+	}
+	if (right > 0) {
+		directionRight = FORWARD;
+	}
+	else if (right == 0) {
+		directionRight = RELEASE;
+	}
+	else{
+		directionRight = BACKWARD;
+	}
 	if (right > 255) {
 		right = 255;
 	}
@@ -279,7 +291,9 @@ void drive(int left, int right, int duration) {
 		left = -255;
 	}
 	
-	motorA.run(FORWARD)
+	motorA.run(directionLeft);
+	motorB.run(directionRight);
+	/*
 	digitalWrite(motorA1, left < 0 ? HIGH : LOW);
 	digitalWrite(motorA2, left <= 0 ? LOW : HIGH);
 
@@ -288,7 +302,9 @@ void drive(int left, int right, int duration) {
 
 	analogWrite(motorApwm, abs(left));
 	analogWrite(motorBpwm, abs(right));
-
+	*/
+	mortorA.setSpeed(abs(left));
+	mortorB.setSpeed(abs(right));
 	delay(duration);
 }
 
