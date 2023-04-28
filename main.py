@@ -32,12 +32,12 @@ CUT_RESCUEKIT = (50, 270, 120, 170)
 CUT_TOP = (120, 200, 60, 120) #extra cut for skip at intersections
 CUT_OBSTACLE = (60, 300, 140, 192)
 
-ser = serial.Serial('/dev/ttyAMA0', 9600, timeout = 0.5) #establish serial connenction 
+#ser = serial.Serial('/dev/ttyAMA0', 9600, timeout = 0.5) #establish serial connenction 
 
-while(not ser.is_open):
-	print("Waiting for Serial...")
-	time.sleep(0.1)
-print("Opened:", ser.name, "Arduino Uno") 
+#while(not ser.is_open):
+#	print("Waiting for Serial...")
+#	time.sleep(0.1)
+#print("Opened:", ser.name, "Arduino Uno") 
 
 framesTotal = 0 #counter for frames
 startTime = time.time() #for FPS calculation at the end of the program
@@ -105,13 +105,13 @@ def delay(duration):
 def drive(motorLeft, motorRight, duration):
 	send = str(motorLeft) + ':' + str(motorRight) + ':' + str(duration)
 	print("Send:", send)
-	ser.write(send.encode())
+	#ser.write(send.encode())
 	duration = float(duration / 1000.0)
 	time.sleep(0.1)
-	while True: #waits for the teensy to execute the command
-		readData = ser.readline().decode('ascii').rstrip()
-		if readData == "1": 
-			break
+	#while True: #waits for the teensy to execute the command
+	#	readData = ser.readline().decode('ascii').rstrip()
+	#	if readData == "1": 
+	#		break
 
 def turnRelative(deg):
 	drive(0, 0, deg)
@@ -122,19 +122,13 @@ def armDown():
 def armUp():
 	sendAndWait("armUp")
 
-def sendAndWait(send): #sends command and waits for receiving the ok
-	ser.write(send.encode())
-	while True:
-		readData = ser.readline().decode('ascii').rstrip()
-		if readData == "1":
-			break
 
 def distance():
-	ser.write(b"dist")
-	while True:
-		readData = ser.readline().decode('ascii').rstrip()
-		if readData != "":
-			return int(readData) * 0.075
+	#ser.write(b"dist")
+	#while True:
+	#	readData = ser.readline().decode('ascii').rstrip()
+	#	if readData != "":
+	#		return int(readData) * 0.075
 
 def toCornerUnload():
 	camera = PiCamera()
@@ -148,8 +142,8 @@ def toCornerUnload():
 		image = cv2.GaussianBlur(image, ((5, 5)), 2, 2)
 
 		black = cv2.inRange(image, (0, 0, 0), (255, 255, 75))
-		if(cv2.countNonZero(black) > 5000):
-			sendAndWait("C")
+		#if(cv2.countNonZero(black) > 5000):
+	#		sendAndWait("C")
 		
 
 		cv2.imshow("Corner out", image)
@@ -163,9 +157,9 @@ def toCornerUnload():
 
 def findCorner(pIsWallRight):
 	if pIsWallRight == True:
-		print("searching for corner with wall right")
-		sendAndWait("turnToOrigin")
-		ser.write(b'driveToWall')
+		#print("searching for corner with wall right")
+		#sendAndWait("turnToOrigin")
+		#ser.write(b'driveToWall')
 		turnRelative(90)
 
 
@@ -297,7 +291,7 @@ def rescueVictim():
 				turnRelative(pos / 4)
 				rotation = pos / 4
 			if(155 > y > 115 and abs(pos) <= 10):
-				sendAndWait("grabVictim")
+				#sendAndWait("grabVictim")
 				return (2, movement, rotation)
 			return (1, movement, rotation)
 
@@ -319,12 +313,12 @@ while True:
 		#	s2 = ser.readline()
 		#	print("TEENSY_DEBUG: " + str(s2))
 
-		if(ser.in_waiting != 0):
-			s = str(ser.readline())
-			print("TEENSY SAID: " + s)
-			if("O" in s):
-				obstacle = True
-				print("OBSTACLE")
+		#if(ser.in_waiting != 0):
+		#	s = str(ser.readline())
+		#	print("TEENSY SAID: " + s)
+		#	if("O" in s):
+		#		obstacle = True
+		#		print("OBSTACLE")
 
 		image = frame.array
 		image_rgb = image 
@@ -343,7 +337,7 @@ while True:
 
 			contours_top, hierarchy_top = cv2.findContours(line_top.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 			if(len(contours_top) > 0):
-				ser.write(b'S')
+			#	ser.write(b'S')
 				print("SKIP")
 				delay(0.4)		
 		cut = image[CUT[2]:CUT[3],CUT[0]:CUT[1]]
@@ -370,7 +364,7 @@ while True:
 			if cv2.countNonZero(green_stop) > 300:	
 				print("Finished turning Green")
 				turningGreen = 0
-				ser.write(b'\nG\n')
+				#ser.write(b'\nG\n')
 				delay(0.2)
 				#ser.write(b'G')
 				#delay(0.2)
@@ -426,9 +420,10 @@ while True:
 				if(len(contours_silver) == 0):
 					print("detected silver")
 					cv2.putText(image_rgb, "rescue", (65, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 106, 255), 3)
-					ser.write(b'Rescue') #sends "Rescue" to the teensy to prove the rescue area with the distance sensor
+					#ser.write(b'Rescue') #sends "Rescue" to the teensy to prove the rescue area with the distance sensor
 					
-					read_serial = ser.readline().decode('ascii') 
+					#read_serial = ser.readline().decode('ascii') 
+					read_serial = 0 #added for not delete
 					if "8" in read_serial: #yep, the distance is between 80cm and 130cm 
 						cv2.destroyAllWindows()
 						camera.close()
@@ -436,7 +431,7 @@ while True:
 						break
 					else:
 						print("Teensy said: there can't be the evacuation zone")
-						ser.write(str(0/10).encode())
+						#ser.write(str(0/10).encode())
 						rescueCounter = 0
 
 			nearest = 1000
@@ -468,7 +463,7 @@ while True:
 				if(pCounter > 10) and (abs(a2 - a1) < 40):
 					print("Ecke erkannt")
 					pCounter = 0
-					ser.write(b'\nE\n')
+					#ser.write(b'\nE\n')
 			# else:
 			# 	pCounter = 0
 
@@ -500,7 +495,7 @@ while True:
 			if(obstacle and abs(linePos - 20) < 40):
 				print("OBSTACLE")
 				obstacle = False
-				ser.write(b'\nO\n')
+				#ser.write(b'\nO\n')
 				cv2.putText(image_rgb, "Obstacle end", (65, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 106, 255), 3)
 			
 		contours_right = False
@@ -528,7 +523,7 @@ while True:
 							s = s + 1
 							print("S")
 					if(d): #deadend
-						ser.write(b'D') 
+						#ser.write(b'D') 
 						print("deadend") 
 						print("Send: D")
 						#delay(1)
@@ -538,12 +533,12 @@ while True:
 						print("Send: S")
 					else:
 						if(left > right):
-							ser.write(b'L')
+							#ser.write(b'L')
 							turningGreen = 1
 							print("Send: L")
 							delay(0.5)
 						elif(right > left):
-							ser.write(b'R')
+							#ser.write(b'R')
 							turningGreen = 2
 							print("Send: R")
 							delay(0.5)
@@ -645,7 +640,7 @@ while True:
 				
 			else:
 				gapcounter = 0
-				ser.write(str(linePos / 10).encode()) 
+				#ser.write(str(linePos / 10).encode()) 
 
 		if(grn_counter > 0):
 			grn_counter = grn_counter - 1
