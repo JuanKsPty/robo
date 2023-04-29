@@ -22,6 +22,7 @@ import time
 import cv2
 import serial
 import random
+import RPi.GPIO as GPIO
 
 
 CUT = (0, 320, 140, 192)
@@ -59,6 +60,30 @@ x = 0
 y = 0
 r = 0
 obstacle = False
+
+kp = .75
+armUp = 1
+
+ena = 21
+enb = 18
+GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
+
+GPIO.setup(18, GPIO.OUT)
+GPIO.setup(23, GPIO.OUT)
+GPIO.setup(24, GPIO.OUT)
+
+GPIO.setup(21, GPIO.OUT)
+GPIO.setup(20, GPIO.OUT)
+GPIO.setup(16, GPIO.OUT)
+
+GPIO.output(21, GPIO.LOW)
+GPIO.output(18, GPIO.LOW)
+
+pwm_a = GPIO.PWM(ena,100)
+pwm_b = GPIO.PWM(enb,100)
+pwm_a.start(0)
+pwm_b.start(0)
+
 
 ########## FUNCTIONS ##########
 
@@ -101,26 +126,54 @@ def delay(duration):
 	time.sleep(duration)
 	timeWaitet = timeWaitet + duration
 
-def drive(motorLeft, motorRight, duration):
-	send = str(motorLeft) + ':' + str(motorRight) + ':' + str(duration)
-	print("Send:", send)
-	#ser.write(send.encode())
-	duration = float(duration / 1000.0)
-	time.sleep(0.1)
-	#while True: #waits for the teensy to execute the command
-	#	readData = ser.readline().decode('ascii').rstrip()
-	#	if readData == "1": 
-	#		break
+def motorAF(power):
+    if power < 0:
+        power = power*-1
+        pwm_a.ChangeDutyCycle(power)
+        GPIO.output(20, GPIO.LOW)
+        GPIO.output(16, GPIO.HIGH)
+    pwm_a.ChangeDutyCycle(power)
+    GPIO.output(20, GPIO.HIGH)
+    GPIO.output(16, GPIO.LOW)
+    return
+    
+def motorBF(power):
+    if power < 0:
+        power = power*-1
+        pwm_b.ChangeDutyCycle(power)
+        GPIO.output(24, GPIO.LOW)
+        GPIO.output(13, GPIO.HIGH)
+    pwm_b.ChangeDutyCycle(power)
+    GPIO.output(23, GPIO.LOW)
+    GPIO.output(24, GPIO.HIGH)
+    return
+    
+    
+def motorSteer(speed,steer):
+    if steer == 0:
+        motorAF(speed)
+        motorBF(speed)
+        return
+    elif steer > 0:
+        steer = 100 - steer
+        motorAF(speed)
+        motorBF(speed*steer/100)
+        return
+    elif steer < 0:
+        steer = steer*-1
+        steer = 100 - steer
+        motorBF(speed)
+        motorAF(speed*steer/100)
+        return
 
+
+def drive(motorLeft, motorRight, duration):
+	motorAF(motorLeft)
+	motorBF(motorRight)
+	delay(duration)
+	
 def turnRelative(deg):
 	drive(0, 0, deg)
-
-def armDown():
-	sendAndWait("armDown")
-
-def armUp():
-	sendAndWait("armUp")
-
 
 #def distance():
 	#ser.write(b"dist")
@@ -297,6 +350,11 @@ def rescueVictim():
 
 D_ONE_TILE = 1025
 
+pwm_a = GPIO.PWM(ena,255)
+pwm_b = GPIO.PWM(enb,255)
+pwm_a.start(0)
+pwm_b.start(0)
+
 while True:
 	camera = PiCamera()
 	camera.resolution = (320, 192)
@@ -469,6 +527,7 @@ while True:
 			#print(pCounter)
 			#pCounter = pCounter - 1
 			b = cv2.boundingRect(contours_blk[index])
+
 			x, y, w, h = b
 			#print(w)
 			LineWidthLastLoop = w
@@ -480,11 +539,11 @@ while True:
 
 			linePos = int(x + w / 2 - 160)
 			cv2.putText(image_rgb, str(linePos),(linePos + 140, 70), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 106, 255), 2)
-			#cv2.line(image_rgb, (linePos + 160, 80), (linePos + 160, 160), (255, 0, 0),2)
-			#cv2.line(image_rgb, (0, 110), (319, 110), (255, 0, 0), 2)
+			cv2.line(image_rgb, (linePos + 160, 80), (linePos + 160, 160), (255, 0, 0),2)
+			cv2.line(image_rgb, (0, 110), (319, 110), (255, 0, 0), 2)
 			lastLinePos = linePos
-
-			# tg = False
+			
+			motorSteer(20,(linePos*kp))
 			# if(turningGreen == 1):
 			# 	tg = abs(linePos + 10) < 30
 			# elif(turningGreen == 2):
