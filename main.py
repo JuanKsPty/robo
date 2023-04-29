@@ -63,7 +63,7 @@ obstacle = False
 
 kp = .75
 armUp = 1
-
+speedLine = 20
 ena = 21
 enb = 18
 GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
@@ -79,8 +79,8 @@ GPIO.setup(16, GPIO.OUT)
 GPIO.output(21, GPIO.LOW)
 GPIO.output(18, GPIO.LOW)
 
-pwm_a = GPIO.PWM(ena,100)
-pwm_b = GPIO.PWM(enb,100)
+pwm_a = GPIO.PWM(ena,255)
+pwm_b = GPIO.PWM(enb,255)
 pwm_a.start(0)
 pwm_b.start(0)
 
@@ -132,6 +132,7 @@ def motorAF(power):
         pwm_a.ChangeDutyCycle(power)
         GPIO.output(20, GPIO.LOW)
         GPIO.output(16, GPIO.HIGH)
+        return
     pwm_a.ChangeDutyCycle(power)
     GPIO.output(20, GPIO.HIGH)
     GPIO.output(16, GPIO.LOW)
@@ -142,7 +143,8 @@ def motorBF(power):
         power = power*-1
         pwm_b.ChangeDutyCycle(power)
         GPIO.output(24, GPIO.LOW)
-        GPIO.output(13, GPIO.HIGH)
+        GPIO.output(23, GPIO.HIGH)
+        return
     pwm_b.ChangeDutyCycle(power)
     GPIO.output(23, GPIO.LOW)
     GPIO.output(24, GPIO.HIGH)
@@ -156,14 +158,14 @@ def motorSteer(speed,steer):
         return
     elif steer > 0:
         steer = 100 - steer
-        motorAF(speed)
-        motorBF(speed*steer/100)
+        motorBF((0))
+        motorAF(speed+steer/35)
         return
     elif steer < 0:
         steer = steer*-1
         steer = 100 - steer
-        motorBF(speed)
-        motorAF(speed*steer/100)
+        motorAF((0))
+        motorBF(speed+steer/35)
         return
 
 
@@ -350,8 +352,7 @@ def rescueVictim():
 
 D_ONE_TILE = 1025
 
-pwm_a = GPIO.PWM(ena,255)
-pwm_b = GPIO.PWM(enb,255)
+
 pwm_a.start(0)
 pwm_b.start(0)
 
@@ -480,15 +481,15 @@ while True:
 					
 					#read_serial = ser.readline().decode('ascii') 
 					read_serial = 0 #added for not delete
-					if "8" in read_serial: #yep, the distance is between 80cm and 130cm 
-						cv2.destroyAllWindows()
-						camera.close()
-						rescue()
-						break
-					else:
-						print("Teensy said: there can't be the evacuation zone")
+					#if "8" in read_serial: #yep, the distance is between 80cm and 130cm 
+						#cv2.destroyAllWindows()
+						#camera.close()
+						#rescue()
+						#break
+					#else:
+						#print("Teensy said: there can't be the evacuation zone")
 						#ser.write(str(0/10).encode())
-						rescueCounter = 0
+						#rescueCounter = 0
 
 			nearest = 1000
 			a1 = 0
@@ -542,8 +543,9 @@ while True:
 			cv2.line(image_rgb, (linePos + 160, 80), (linePos + 160, 160), (255, 0, 0),2)
 			cv2.line(image_rgb, (0, 110), (319, 110), (255, 0, 0), 2)
 			lastLinePos = linePos
-			
-			motorSteer(20,(linePos*kp))
+			steering = linePos*kp
+			print(steering)
+			motorSteer(speedLine,steering)
 			# if(turningGreen == 1):
 			# 	tg = abs(linePos + 10) < 30
 			# elif(turningGreen == 2):
