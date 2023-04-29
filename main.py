@@ -18,7 +18,6 @@
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import numpy as np
-|
 import time
 import cv2
 import serial
@@ -123,13 +122,12 @@ def armUp():
 	sendAndWait("armUp")
 
 
-def distance():
+#def distance():
 	#ser.write(b"dist")
 	#while True:
 	#	readData = ser.readline().decode('ascii').rstrip()
 	#	if readData != "":
 	#		return int(readData) * 0.075
-
 def toCornerUnload():
 	camera = PiCamera()
 	camera.resolution = (320, 180) 
